@@ -1,0 +1,14 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+temp_*
+
+# Ollama specific
+.ollama/
+
+# Environment variables
+.env

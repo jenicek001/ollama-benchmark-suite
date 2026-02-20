@@ -7,6 +7,15 @@ Instead of using the proprietary kernel driver (which gets blocked by Secure Boo
 1.  **Upstream Kernel Driver**: The open-source `amdgpu` driver built into the Linux kernel (works with Secure Boot).
 2.  **ROCm User-Space Libraries**: The proprietary compute libraries needed for AI/LLM workloads, installed without the kernel module.
 
+### Ryzen CPU + iGPU Note (Best Drivers)
+On AMD Ryzen systems, HW acceleration for Ollama comes from the Radeon iGPU/dGPU, not the CPU itself. The most reliable setup on Ubuntu 24.04 (as of Feb 2026) is:
+- **Ubuntu 24.04.3+ HWE kernel 6.14.x** (officially supported by ROCm 7.2)
+- The **in-kernel `amdgpu` driver** (Secure Boot compatible, not DKMS)
+- **ROCm 7.2 (or 6.4.2+) user-space libraries** installed with `--no-dkms`
+- **HSA_OVERRIDE_GFX_VERSION=11.0.0** for Radeon 780M/890M iGPUs
+
+If your Ryzen system has no supported AMD GPU/iGPU, Ollama will run on CPU only (no GPU acceleration).
+
 ---
 
 ## 1. Installation Steps
@@ -46,12 +55,16 @@ sudo reboot
 After rebooting, perform these checks to ensure everything is working.
 
 ### A. Check Kernel Driver
-Verify that the `amdgpu` module is loaded.
+Verify that the `amdgpu` module is loaded from the kernel tree (not DKMS).
 
 ```bash
-lsmod | grep amdgpu
+modinfo amdgpu | grep filename
 ```
-*Expected Output:* You should see `amdgpu` listed with a size and usage count.
+*Expected Output:* 
+```
+filename: /lib/modules/6.14.0-XX-generic/kernel/drivers/gpu/drm/amd/amdgpu/amdgpu.ko.zst
+```
+**Important**: The path should contain `/kernel/drivers/`, **not** `/updates/dkms/`. If you see DKMS, the wrong driver is loaded.
 
 ### B. Check ROCm Status
 Use the System Management Interface to check if the GPU is detected by the ROCm stack.
@@ -102,9 +115,26 @@ curl http://localhost:11434/api/generate -d '{
 
 ### Issue: Ollama uses CPU instead of GPU
 *   **Cause:** Ollama might not detect the ROCm library path or the GPU is unsupported by the default ROCm version.
-*   **Fix:**
-    1.  Ensure `HSA_OVERRIDE_GFX_VERSION` is set if using a consumer GPU (like Radeon 780M/890M).
-    2.  Check `/etc/systemd/system/ollama.service.d/remote.conf` for:
-        ```ini
-        Environment="HSA_OVERRIDE_GFX_VERSION=11.0.0"
+*   **Fix for Radeon 780M/890M iGPUs:**
+    1.  Create systemd service override:
+        ```bash
+        sudo mkdir -p /etc/systemd/system/ollama.service.d
+        echo '[Service]
+Environment="OLLAMA_HOST=0.0.0.0:11434"
+Environment="HSA_OVERRIDE_GFX_VERSION=11.0.0"' | sudo tee /etc/systemd/system/ollama.service.d/override.conf
         ```
+    2.  Reload and restart Ollama:
+        ```bash
+        sudo systemctl daemon-reload
+        sudo systemctl restart ollama
+        ```
+    3.  Verify GPU detection:
+        ```bash
+        sudo journalctl -u ollama -n 50 | grep "inference compute"
+        ```
+        You should see `library=ROCm compute=gfx1100 ... type=iGPU`
+    4.  Check GPU offloading during inference:
+        ```bash
+        sudo journalctl -u ollama -n 100 | grep "offloaded"
+        ```
+        You should see all model layers offloaded to GPU (e.g., `offloaded 25/25 layers to GPU`)

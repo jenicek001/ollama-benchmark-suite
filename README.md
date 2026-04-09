@@ -47,7 +47,17 @@ Check the `results/` directory for detailed performance reports on specific hard
 ## 🛠️ Hardware Support
 
 This suite is designed to be hardware-agnostic but includes specific setup guides for:
-*   AMD Ryzen AI 300 Series (Strix Point) with Radeon 890M iGPU.
+*   **AMD Ryzen AI Max 395** (Strix Point) with Radeon 890M iGPU (gfx1151)
+*   **AMD Ryzen 7 8845HS** (Hawk Point) with Radeon 780M iGPU (gfx1103)
+
+### GPU Auto-Configuration
+
+Automatically detect and configure GPU acceleration:
+```bash
+sudo ./scripts/setup_ollama_gpu.sh
+```
+
+See `docs/GPU_CONFIGURATION.md` for manual setup and troubleshooting.
 
 ## 📄 License
 

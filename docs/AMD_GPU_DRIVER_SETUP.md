@@ -12,7 +12,7 @@ On AMD Ryzen systems, HW acceleration for Ollama comes from the Radeon iGPU/dGPU
 - **Ubuntu 24.04.3+ HWE kernel 6.14.x** (officially supported by ROCm 7.2)
 - The **in-kernel `amdgpu` driver** (Secure Boot compatible, not DKMS)
 - **ROCm 7.2 (or 6.4.2+) user-space libraries** installed with `--no-dkms`
-- **HSA_OVERRIDE_GFX_VERSION=11.0.0** for Radeon 780M/890M iGPUs
+- **HSA_OVERRIDE_GFX_VERSION=11.0.0** for gfx1150/gfx1151 Ryzen AI iGPUs when using Ollama
 
 If your Ryzen system has no supported AMD GPU/iGPU, Ollama will run on CPU only (no GPU acceleration).
 
@@ -115,7 +115,7 @@ curl http://localhost:11434/api/generate -d '{
 
 ### Issue: Ollama uses CPU instead of GPU
 *   **Cause:** Ollama might not detect the ROCm library path or the GPU is unsupported by the default ROCm version.
-*   **Fix for Radeon 780M/890M iGPUs:**
+*   **Fix for gfx1150/gfx1151 Ryzen AI iGPUs:**
     1.  Create systemd service override:
         ```bash
         sudo mkdir -p /etc/systemd/system/ollama.service.d

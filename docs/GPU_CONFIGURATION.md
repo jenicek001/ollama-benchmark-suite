@@ -5,10 +5,10 @@
 This repository supports benchmarking on multiple AMD Ryzen AI systems:
 
 ### System 1: AMD Ryzen AI Max 395 (Strix Point)
-- **GPU:** Radeon 890M (gfx1151)
+- **GPU:** Radeon 8060S / gfx1151
 - **VRAM:** 96 GB unified memory
-- **ROCm Support:** Requires `HSA_OVERRIDE_GFX_VERSION=11.5.1` on Linux
-- **Status:** Experimental ROCm support via workaround
+- **ROCm Support:** Use `HSA_OVERRIDE_GFX_VERSION=11.0.0` with the current Ollama + ROCm stack in this repo
+- **Status:** Works via gfx1100 compatibility override
 
 ### System 2: AMD Ryzen 7 8845HS (Hawk Point)
 - **GPU:** Radeon 780M (gfx1103)
@@ -26,9 +26,11 @@ sudo ./scripts/setup_ollama_gpu.sh
 
 This script will:
 1. ✅ Detect your GPU architecture (gfx1103 or gfx1151)
-2. ✅ Apply optimal HSA_OVERRIDE_GFX_VERSION settings
+2. ✅ Apply the correct machine-specific `HSA_OVERRIDE_GFX_VERSION` only when needed
 3. ✅ Configure Ollama service for remote access
 4. ✅ Restart Ollama and verify GPU acceleration
+
+Because this repo is shared across multiple machines, do not copy one machine's `/etc/systemd/system/ollama.service.d/*.conf` to another. Re-run `sudo ./scripts/setup_ollama_gpu.sh` on each host so the override matches the local GPU.
 
 ## Manual Configuration
 
@@ -41,14 +43,14 @@ sudo nano /etc/systemd/system/ollama.service.d/override.conf
 # Add:
 [Service]
 Environment="OLLAMA_HOST=0.0.0.0:11434"
-# gfx1103 is officially supported - no override needed
+# gfx1103 is supported directly - no override needed
 
 # Reload and restart
 sudo systemctl daemon-reload
 sudo systemctl restart ollama
 ```
 
-### For Radeon 890M (gfx1151) - Ryzen AI Max 395
+### For Radeon 8060S / gfx1151 - Ryzen AI Max 395 class systems
 
 ```bash
 # Edit Ollama service override
@@ -57,7 +59,7 @@ sudo nano /etc/systemd/system/ollama.service.d/override.conf
 # Add:
 [Service]
 Environment="OLLAMA_HOST=0.0.0.0:11434"
-Environment="HSA_OVERRIDE_GFX_VERSION=11.5.1"
+Environment="HSA_OVERRIDE_GFX_VERSION=11.0.0"
 
 # Reload and restart
 sudo systemctl daemon-reload
@@ -84,7 +86,7 @@ journalctl -u ollama -f | grep -E "offload|ROCm"
 - **Small models (8B-20B):** 15-30 tokens/s
 - **Large models (70B):** 2-3 tokens/s
 
-### Radeon 890M (gfx1151) 
+### Radeon 8060S / gfx1151
 - **Tiny models (0.5B):** ~225 tokens/s
 - **Small models (8B-20B):** 20-40 tokens/s
 - **Large models (70B):** ~4 tokens/s
@@ -204,7 +206,7 @@ rocminfo | grep -E "gfx|Name:"
 
 # Should show:
 # Name: gfx1103 (for 780M)
-# Name: gfx1151 (for 890M)
+# Name: gfx1151 (for 8060S)
 ```
 
 ### No GPU Offloading
@@ -224,7 +226,7 @@ journalctl -u ollama -f
 ### Models Running on CPU Only
 
 - Verify ROCm installation: `rocminfo`
-- Check HSA_OVERRIDE_GFX_VERSION matches your GPU
+- Check `HSA_OVERRIDE_GFX_VERSION` matches the guidance for your local GPU in this repo
 - Try Ollama-Vulkan backend as alternative: `OLLAMA_USE_VULKAN=1`
 
 ### Model Load Hangs Indefinitely (Large Models)

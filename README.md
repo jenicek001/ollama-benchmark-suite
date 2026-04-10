@@ -47,7 +47,7 @@ Check the `results/` directory for detailed performance reports on specific hard
 ## 🛠️ Hardware Support
 
 This suite is designed to be hardware-agnostic but includes specific setup guides for:
-*   **AMD Ryzen AI Max 395** (Strix Point) with Radeon 890M iGPU (gfx1151)
+*   **AMD Ryzen AI Max 395 class systems** with Radeon 8060S / gfx1151 iGPU
 *   **AMD Ryzen 7 8845HS** (Hawk Point) with Radeon 780M iGPU (gfx1103)
 
 ### GPU Auto-Configuration

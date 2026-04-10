@@ -96,13 +96,23 @@ systemctl enable nginx
 echo ""
 echo "7️⃣  Configuring Ollama for localhost only..."
 mkdir -p /etc/systemd/system/ollama.service.d
+
+GFX_VERSION=$(rocminfo 2>/dev/null | grep -oP 'Name:\s+gfx\K[0-9]+' | head -1)
+HSA_OVERRIDE_LINE=""
+
+case "$GFX_VERSION" in
+    1150|1151)
+        HSA_OVERRIDE_LINE='Environment="HSA_OVERRIDE_GFX_VERSION=11.0.0"'
+        ;;
+esac
+
 cat > /etc/systemd/system/ollama.service.d/remote.conf << EOF
 [Service]
 # Bind to localhost only (nginx will handle external access)
 Environment="OLLAMA_HOST=127.0.0.1:11434"
 
-# Ensure AMD ROCm is properly detected
-Environment="HSA_OVERRIDE_GFX_VERSION=11.0.0"
+# Apply machine-specific ROCm compatibility override only when needed
+$HSA_OVERRIDE_LINE
 EOF
 
 systemctl daemon-reload

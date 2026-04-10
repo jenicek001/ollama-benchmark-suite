@@ -17,17 +17,17 @@ case "$GFX_VERSION" in
     1103)
         GPU_NAME="Radeon 780M (Ryzen 8845HS)"
         HSA_OVERRIDE=""
-        COMMENT="# gfx1103 is officially supported by ROCm - no override needed"
+        COMMENT="# gfx1103 is supported directly by the current ROCm/Ollama stack"
         ;;
     1151)
-        GPU_NAME="Radeon 890M (Ryzen AI Max 395)"
-        HSA_OVERRIDE='Environment="HSA_OVERRIDE_GFX_VERSION=11.5.1"'
-        COMMENT="# gfx1151 requires override for ROCm on Linux"
+        GPU_NAME="Radeon 8060S / gfx1151 (Ryzen AI Max 395 class APU)"
+        HSA_OVERRIDE='Environment="HSA_OVERRIDE_GFX_VERSION=11.0.0"'
+        COMMENT="# gfx1151 uses the stable gfx1100 compatibility override for Ollama + ROCm"
         ;;
     1150)
-        GPU_NAME="Radeon 890M (Ryzen AI 300 Series)"
-        HSA_OVERRIDE='Environment="HSA_OVERRIDE_GFX_VERSION=11.5.0"'
-        COMMENT="# gfx1150 requires override for ROCm on Linux"
+        GPU_NAME="Ryzen AI 300 series iGPU (gfx1150)"
+        HSA_OVERRIDE='Environment="HSA_OVERRIDE_GFX_VERSION=11.0.0"'
+        COMMENT="# gfx1150 uses the stable gfx1100 compatibility override for Ollama + ROCm"
         ;;
     *)
         GPU_NAME="AMD GPU gfx$GFX_VERSION"
@@ -36,6 +36,11 @@ case "$GFX_VERSION" in
         echo "⚠️  Warning: Unknown GPU architecture. Proceeding without override."
         ;;
 esac
+
+if [ -n "$FORCE_HSA_OVERRIDE_GFX_VERSION" ]; then
+    HSA_OVERRIDE="Environment=\"HSA_OVERRIDE_GFX_VERSION=$FORCE_HSA_OVERRIDE_GFX_VERSION\""
+    COMMENT="# HSA override forced by FORCE_HSA_OVERRIDE_GFX_VERSION"
+fi
 
 echo "📋 GPU: $GPU_NAME"
 echo ""
